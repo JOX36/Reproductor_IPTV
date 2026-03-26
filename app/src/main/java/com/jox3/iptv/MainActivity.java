@@ -1,4 +1,4 @@
-package com.jox3.iptv;
+package com.jox3.iptvplayer;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
