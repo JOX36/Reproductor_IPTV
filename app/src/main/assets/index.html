@@ -1050,8 +1050,10 @@ function tvClearHighlights(){
 
 document.addEventListener('keydown',e=>{
   const key=e.keyCode;
-  if(!document.getElementById('appScreen')||document.getElementById('appScreen').style.display==='none')return;
-  if(document.activeElement.tagName==='INPUT')return;
+  const appScreen=document.getElementById('appScreen');
+  if(!appScreen||appScreen.style.display!=='flex')return;
+  const tag=document.activeElement&&document.activeElement.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA')return;
   if(!document.getElementById('seriesModal').classList.contains('hidden'))return;
 
   if(key===179||key===415||key===19){
