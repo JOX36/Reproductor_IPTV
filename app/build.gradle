@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
+    namespace 'com.jox3.iptvplayer'
     compileSdk 34
-    namespace 'com.jox3.iptv'
 
     defaultConfig {
-        applicationId "com.jox3.iptv"
+        applicationId "com.jox3.iptvplayer"
         minSdk 21
         targetSdk 34
         versionCode 1
