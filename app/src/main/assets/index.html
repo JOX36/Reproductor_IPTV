@@ -105,8 +105,9 @@ body{font-family:'Exo 2',sans-serif;font-size:14px;color:var(--text)}
 .main-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
 
 /* PLAYER */
-.player-wrap{flex-shrink:0;background:#000;position:relative}
-#vid{width:100%;display:block;background:#000;max-height:38vh;min-height:160px;transition:object-fit .2s}
+.player-wrap{flex-shrink:0;background:#000;position:relative;display:none}
+.player-wrap.active{display:block}
+#vid{width:100%;display:block;background:#000;max-height:32vh;transition:object-fit .2s}
 .vid-contain{object-fit:contain}
 .vid-cover{object-fit:cover}
 .vid-fill{object-fit:fill}
@@ -716,6 +717,7 @@ function doSearch(q){
 function play(item){
   if(item.type==='series'){openSeries(item);return}
   S.current=item;S.history=S.history.filter(h=>fk(h.item)!==fk(item));S.history.unshift({item,ts:Date.now()});saveHist();
+  document.getElementById('playerWrap').classList.add('active');
   document.getElementById('nowBar').classList.add('visible');
   document.getElementById('nowName').textContent=item.name;document.getElementById('nowCat').textContent=item.group||'';
   document.getElementById('nowLogo').innerHTML=item.logo?`<img src="${esc(item.logo)}" onerror="this.parentElement.textContent='📺'">`:'📺';
@@ -741,6 +743,7 @@ function stopPlayer(){
   if(S.hls){S.hls.destroy();S.hls=null}
   const vid=document.getElementById('vid');vid.pause();vid.removeAttribute('src');
   showOverlay(true,false,'Selecciona un canal o película');
+  document.getElementById('playerWrap').classList.remove('active');
   document.getElementById('nowBar').classList.remove('visible');
   document.getElementById('epgBar').classList.remove('visible');
   const ov=document.getElementById('vidEpgOverlay');if(ov)ov.classList.remove('show');
