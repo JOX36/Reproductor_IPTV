@@ -108,6 +108,8 @@ body{font-family:'Exo 2',sans-serif;font-size:14px;color:var(--text)}
 .player-wrap{flex-shrink:0;background:#000;position:relative;display:none}
 .player-wrap.active{display:block}
 #vid{width:100%;display:block;background:#000;max-height:32vh;transition:object-fit .2s}
+#vid:-webkit-full-screen{width:100vw!important;height:100vh!important;max-height:100vh!important;object-fit:fill}
+#vid:fullscreen{width:100vw!important;height:100vh!important;max-height:100vh!important;object-fit:fill}
 .vid-contain{object-fit:contain}
 .vid-cover{object-fit:cover}
 .vid-fill{object-fit:fill}
