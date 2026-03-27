@@ -718,11 +718,13 @@ function doSearch(q){
 function play(item){
   if(item.type==='series'){openSeries(item);return}
   S.current=item;S.history=S.history.filter(h=>fk(h.item)!==fk(item));S.history.unshift({item,ts:Date.now()});saveHist();
-  document.getElementById('playerWrap').classList.add('active');
-  // En TV (no táctil) expandir el video al máximo
+  const pw=document.getElementById('playerWrap');
+  pw.classList.add('active');
+  // En TV expandir video a pantalla casi completa
   if(!window.matchMedia('(pointer:coarse)').matches){
-    document.getElementById('playerWrap').style.maxHeight='55vh';
-    document.getElementById('vid').style.maxHeight='55vh';
+    pw.style.cssText='display:block;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:500;background:#000';
+    document.getElementById('vid').style.cssText='width:100%;height:100%;max-height:100vh;object-fit:contain';
+    document.getElementById('nowBar').style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:501;background:rgba(13,18,25,0.95)';
   }
   document.getElementById('nowBar').classList.add('visible');
   document.getElementById('nowName').textContent=item.name;document.getElementById('nowCat').textContent=item.group||'';
@@ -767,7 +769,11 @@ function stopPlayer(){
   if(S.hls){S.hls.destroy();S.hls=null}
   const vid=document.getElementById('vid');vid.pause();vid.removeAttribute('src');
   showOverlay(true,false,'Selecciona un canal o película');
-  document.getElementById('playerWrap').classList.remove('active');
+  const pwStop=document.getElementById('playerWrap');
+  pwStop.classList.remove('active');
+  pwStop.style.cssText='';
+  document.getElementById('vid').style.cssText='';
+  document.getElementById('nowBar').style.cssText='';
   document.getElementById('nowBar').classList.remove('visible');
   document.getElementById('epgBar').classList.remove('visible');
   const ov=document.getElementById('vidEpgOverlay');if(ov)ov.classList.remove('show');
@@ -982,7 +988,7 @@ function timeAgo(ts){const d=Date.now()-ts,m=Math.floor(d/60000);if(m<1)return'a
 // ══ SERIES ══
 let seriesData=null;
 async function openSeries(item){
-  seriesData=null;document.getElementById('seriesModal').classList.remove('hidden');
+  seriesData=null;document.getElementById('seriesModal').classList.remove('hidden');tvSeriesOpen();
   document.getElementById('modalBody').innerHTML=`<div class="modal-loading"><div class="p-spinner"></div><p>Cargando temporadas...</p></div>`;
   const mh=document.getElementById('modalHeader');
   mh.innerHTML=`${item.logo?`<img src="${esc(item.logo)}" onerror="this.outerHTML='<div class=modal-header-ph>🎭</div>'">`:`<div class="modal-header-ph">🎭</div>`}<div class="modal-title"><h3>${esc(item.name)}</h3><p>${esc(item.group||'')}</p></div><button class="modal-close" onclick="closeSeriesModalForce()">✕</button>`;
@@ -1013,7 +1019,46 @@ function openEpExtByIdx(idx){
 }
 function fmtDur(secs){const m=Math.floor(secs/60),h=Math.floor(m/60);return h>0?`${h}h ${m%60}m`:`${m}m`}
 function closeSeriesModal(e){if(e.target===document.getElementById('seriesModal'))closeSeriesModalForce()}
-function closeSeriesModalForce(){document.getElementById('seriesModal').classList.add('hidden');seriesData=null}
+function closeSeriesModalForce(){document.getElementById('seriesModal').classList.add('hidden');seriesData=null;TV_SERIES.active=false;}
+
+// ── TV Series Modal Navigation ──
+const TV_SERIES={active:false,epIdx:0,btnIdx:0,focus:'eps'};
+function tvSeriesOpen(){
+  TV_SERIES.active=true;TV_SERIES.epIdx=0;TV_SERIES.btnIdx=0;TV_SERIES.focus='eps';
+  setTimeout(()=>tvSeriesHighlight(),300);
+}
+function tvSeriesHighlight(){
+  const eps=document.querySelectorAll('.ep-item');
+  eps.forEach((el,i)=>{el.style.outline=i===TV_SERIES.epIdx?'2px solid var(--accent)':'';});
+  if(eps[TV_SERIES.epIdx])eps[TV_SERIES.epIdx].scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function tvSeriesHighlightBtn(epIdx,btnIdx){
+  const eps=document.querySelectorAll('.ep-item');
+  const btns=eps[epIdx]?.querySelectorAll('.ep-btn');
+  if(btns)btns.forEach((b,i)=>{b.style.outline=i===btnIdx?'2px solid var(--accent2)':''});
+}
+document.addEventListener('keydown',e=>{
+  if(!TV_SERIES.active)return;
+  if(document.getElementById('seriesModal').classList.contains('hidden')){TV_SERIES.active=false;return;}
+  const key=e.keyCode;
+  const eps=document.querySelectorAll('.ep-item');
+  if(TV_SERIES.focus==='eps'){
+    if(key===40){TV_SERIES.epIdx=Math.min(TV_SERIES.epIdx+1,eps.length-1);tvSeriesHighlight();e.preventDefault();}
+    else if(key===38){TV_SERIES.epIdx=Math.max(TV_SERIES.epIdx-1,0);tvSeriesHighlight();e.preventDefault();}
+    else if(key===39||key===13){TV_SERIES.focus='btns';TV_SERIES.btnIdx=0;tvSeriesHighlightBtn(TV_SERIES.epIdx,0);e.preventDefault();}
+    else if(key===8||key===27){closeSeriesModalForce();e.preventDefault();}
+  }else if(TV_SERIES.focus==='btns'){
+    const btns=eps[TV_SERIES.epIdx]?.querySelectorAll('.ep-btn');
+    if(key===39){TV_SERIES.btnIdx=Math.min(TV_SERIES.btnIdx+1,(btns?.length||1)-1);tvSeriesHighlightBtn(TV_SERIES.epIdx,TV_SERIES.btnIdx);e.preventDefault();}
+    else if(key===37){
+      if(TV_SERIES.btnIdx===0){TV_SERIES.focus='eps';tvSeriesHighlight();if(btns)btns.forEach(b=>b.style.outline='');}
+      else{TV_SERIES.btnIdx--;tvSeriesHighlightBtn(TV_SERIES.epIdx,TV_SERIES.btnIdx);}
+      e.preventDefault();
+    }
+    else if(key===13){if(btns&&btns[TV_SERIES.btnIdx])btns[TV_SERIES.btnIdx].click();e.preventDefault();}
+    else if(key===8||key===27){TV_SERIES.focus='eps';tvSeriesHighlight();if(btns)btns.forEach(b=>b.style.outline='');e.preventDefault();}
+  }
+},{capture:false});
 
 // ══ EXTERNAL PLAYERS ══
 function getStreamURL(){return S.current?.url||null}
